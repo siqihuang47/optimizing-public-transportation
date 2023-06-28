@@ -31,14 +31,9 @@ class Producer:
         self.num_partitions = num_partitions
         self.num_replicas = num_replicas
 
-        #
-        #
-        # TODO: Configure the broker properties below. Make sure to reference the project README
-        # and use the Host URL for Kafka and Schema Registry!
-        #
-        #
+        # Configure the broker properties below. 
         self.broker_properties = {
-            "bootstrap.servers" : "localhost:9092",
+            "bootstrap.servers" : "PLAINTEXT://localhost:9092",
             "schema.registry.url" : "http://localhost:8081"
         }
 
@@ -57,26 +52,16 @@ class Producer:
     def create_topic(self):
         """Creates the producer topic if it does not already exist"""
         cli = AdminClient({"bootstrap.servers": self.broker_properties["bootstrap.servers"]})
-
-        existingTopics = cli.list_topics()
+        existingTopics = cli.list_topics().topics
 
         if self.topic_name in existingTopics:
             logger.info(f'Topic {self.topic_name} already exists')
-            return
-        
-        logger.info(f'New Topic {self.topic_name} will be created')
-
-        newTopic = cli.create_topics[NewTopic(topic = self.topic_name, 
+        else:
+            logger.info(f'New Topic {self.topic_name} will be created')
+            cli.create_topics([NewTopic(topic = self.topic_name, 
                                                num_partitions = self.num_partitions, 
-                                               replication_factor = self.num_replicas)]
-        
-        for topic, futures in newTopic.items():
-            try:
-                futures.result()
-                logger.debug("Topic created: %s", topic)
-            except Exception as e:
-                logger.debug("Failed to create topic: %s", topic)
-
+                                               replication_factor = self.num_replicas)])
+    
     def time_millis(self):
         return int(round(time.time() * 1000))
 
